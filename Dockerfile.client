@@ -1,0 +1,57 @@
+FROM php:8.2-apache-buster
+
+USER root
+
+RUN apt-get update && apt-get install -y \
+        libpng-dev \
+        libjpeg-dev \
+        libmagick++-dev \
+        libmagickwand-dev \
+        zlib1g-dev \
+        apt-utils \
+        libfreetype6-dev \
+        libjpeg62-turbo-dev \
+        libxml2-dev \
+        libzip-dev \
+        libonig-dev \
+        zip \
+        curl \
+        unzip \
+        cmake \
+        git \
+        libtool \
+        gcc \
+        protobuf-compiler \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg=/usr/include/ --enable-gd \
+    && docker-php-ext-install -j$(nproc) gd \
+    && docker-php-ext-install pdo_mysql \
+    && docker-php-ext-install mysqli \
+    && docker-php-ext-install zip \
+    && pecl bundle -d /usr/src/php/ext redis \
+    && rm /usr/src/php/ext/redis-*.tgz \
+    && docker-php-ext-install redis \
+    && docker-php-ext-install soap \
+    && docker-php-ext-configure opcache --enable-opcache \
+    && docker-php-ext-install opcache \
+    && docker-php-source delete \
+    && docker-php-ext-install sockets
+
+#Installing grpc and enabling php ext
+RUN pecl install protobuf && docker-php-ext-enable protobuf
+
+#Installing grpc and enabling php ext
+RUN pecl install grpc && docker-php-ext-enable grpc
+
+COPY vhost.conf /etc/apache2/sites-available/000-default.conf
+
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Cleanup
+RUN apt-get clean
+
+RUN chown -R www-data:www-data /var/www/html \
+    && a2enmod rewrite
+
+WORKDIR /var/www/html
+EXPOSE 80
+EXPOSE 443

@@ -1,0 +1,23 @@
+# ROADRUNNER GIT https://github.com/roadrunner-server/roadrunner/pkgs/container/roadrunner
+FROM ghcr.io/roadrunner-server/roadrunner:2023.2.0 AS roadrunner
+FROM php:8.2-cli
+
+WORKDIR /var/www/html
+
+RUN apt-get update && apt-get install -y \
+    git \
+    zip \
+    unzip \
+    protobuf-compiler \
+    && docker-php-ext-install sockets
+
+#COPY ROADRUNNER DEFAULT CONFIG AND BINARY
+COPY --from=roadrunner /usr/bin/rr /usr/local/bin/rr
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+CMD bash -c "composer install"
+
+WORKDIR /var/www/html
+
+CMD ./rr serve --dotenv .env

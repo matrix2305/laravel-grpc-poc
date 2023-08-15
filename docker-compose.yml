@@ -1,0 +1,32 @@
+version: "3.5"
+
+services:
+  server-app:
+    container_name: 'server_app'
+    hostname: 'server_app'
+    build:
+      context: ./
+      dockerfile: Dockerfile.server
+    ports:
+      - "2000:2000"
+      - "2112:2112"
+    volumes:
+      - ./server-app:/var/www/html
+    networks:
+      - grpc-test
+  client-app:
+    container_name: 'client_app'
+    hostname: 'client_app'
+    build:
+      context: ./
+      dockerfile: Dockerfile.client
+    ports:
+      - "2001:80"
+    volumes:
+      - ./client-app:/var/www/html
+    networks:
+      - grpc-test
+
+networks:
+  grpc-test:
+    name: 'grpc-test'
